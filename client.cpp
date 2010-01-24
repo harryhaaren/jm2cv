@@ -28,6 +28,8 @@ bool Client::open(const char *name)
 
 void Client::close()
 {
+	if (m_client == NULL) return;
+
 	jack_deactivate(m_client);
 	jack_client_close(m_client);
 }
