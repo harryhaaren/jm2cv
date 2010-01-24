@@ -22,25 +22,66 @@ int CVIn::process(jack_nframes_t nframes)
 		MappingList::iterator it;
 		for (it = m_it_begin; it != m_it_end; ++it, port++) {
 			Mapping *m = &(*it);
+			jack_midi_data_t buf[3];
 
 			m->cur_mv = m->to_mv(*m_buffers[port]++);
 
 			if (m->tick_cvin()) {
-				if (m->cclsb == -1) {
-					jack_midi_data_t buf[3];
-					buf[0] = 0xB0 | m->channel;
-					buf[1] = m->ccmsb;
-					buf[2] = m->last_mv;
-					jack_midi_event_write(midi_out, f, buf, sizeof buf);
-				} else {
-					jack_midi_data_t buf[3];
-					buf[0] = 0xB0 | m->channel;
-					buf[1] = m->ccmsb;
-					buf[2] = m->last_mv >> 7;
-					jack_midi_event_write(midi_out, f, buf, sizeof buf);
-					buf[1] = m->cclsb;
+				switch (m->type) {
+				case TYPE_PB:
+					buf[0] = 0xE0 | m->channel;
+					buf[1] = m->last_mv >> 7;
 					buf[2] = m->last_mv & 0x7F;
 					jack_midi_event_write(midi_out, f, buf, sizeof buf);
+					break;
+
+				case TYPE_CC:
+					buf[0] = 0xB0 | m->channel;
+					buf[1] = m->ccmsb;
+					if (m->has_lsb) {
+						buf[2] = m->last_mv >> 7;
+						jack_midi_event_write(midi_out, f, buf, sizeof buf);
+						buf[1] = m->cclsb;
+					}
+					buf[2] = m->last_mv & 0x7F;
+					jack_midi_event_write(midi_out, f, buf, sizeof buf);
+					break;
+
+				case TYPE_NRPN:
+					buf[0] = 0xB0 | m->channel;
+					buf[1] = 99;
+					buf[2] = m->ccmsb;
+					jack_midi_event_write(midi_out, f, buf, sizeof buf);
+					buf[1] = 98;
+					buf[2] = m->cclsb;
+					jack_midi_event_write(midi_out, f, buf, sizeof buf);
+					buf[1] = 6;
+					if (m->has_lsb) {
+						buf[2] = m->last_mv >> 7;
+						jack_midi_event_write(midi_out, f, buf, sizeof buf);
+						buf[1] = 38;
+					}
+					buf[2] = m->last_mv & 0x7F;
+					jack_midi_event_write(midi_out, f, buf, sizeof buf);
+					break;
+
+				case TYPE_RPN:
+					buf[0] = 0xB0 | m->channel;
+					buf[1] = 101;
+					buf[2] = m->ccmsb;
+					jack_midi_event_write(midi_out, f, buf, sizeof buf);
+					buf[1] = 100;
+					buf[2] = m->cclsb;
+					jack_midi_event_write(midi_out, f, buf, sizeof buf);
+					buf[1] = 6;
+					if (m->has_lsb) {
+						buf[2] = m->last_mv >> 7;
+						jack_midi_event_write(midi_out, f, buf, sizeof buf);
+						buf[1] = 38;
+					}
+					buf[2] = m->last_mv & 0x7F;
+					jack_midi_event_write(midi_out, f, buf, sizeof buf);
+					break;
 				}
 			}
 		}

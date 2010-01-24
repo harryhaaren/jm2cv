@@ -4,16 +4,33 @@
 #include <string>
 #include <list>
 
+enum ControllerType {
+	TYPE_PB,
+	TYPE_CC,
+	TYPE_NRPN,
+	TYPE_RPN
+};
+
+template <typename T>
+T clamp(T x, T min, T max)
+{
+	if (x < min) return min;
+	if (x > max) return max;
+	return x;
+}
+
 class Mapping
 {
 public:
 	std::string name;
 	int   channel;
+	ControllerType type;
 	int   ccmsb, cclsb;
 	int   mrl, mru;
 	float crl, cru;
 	float latency;
 
+	bool has_lsb;
 	float adj1;
 	float adj2;
 	tick_t latency_ticks;
@@ -27,10 +44,11 @@ public:
 	tick_t since_last_tick;
 
 	Mapping(const char *name,
-	        int channel, int ccmsb, int cclsb,
-	        int mrl, int mru, float crl, float cru, float latency) :
-	    name(name), channel(channel), ccmsb(ccmsb), cclsb(cclsb),
+	        int channel, ControllerType(type), int ccmsb, int cclsb,
+	        int mrl, int mru, float crl, float cru, float latency, bool has_lsb) :
+	    name(name), channel(channel), type(type), ccmsb(ccmsb), cclsb(cclsb),
 	    mrl(mrl), mru(mru), crl(crl), cru(cru), latency(latency),
+	    has_lsb(has_lsb),
 	    cur_mv(0), last_mv(0),
 	    last_cv(0.0),
 	    last_tick(0), since_last_tick(0)
@@ -67,30 +85,19 @@ public:
 		return true;
 	}
 
-	void handle_cvout(int c, int cc, int val, tick_t tick)
+	inline float to_cv(int mv) const
 	{
-		if (c != channel && channel != -1) return;
-		if (cc == ccmsb) {
-			if (cclsb == -1) {
-				cur_mv = val;
-				interp_cvout(tick);
-			} else {
-				cur_mv = val << 7;
-			}
-		} else if (cc == cclsb) {
-			cur_mv |= val;
-			interp_cvout(tick);
-		}
+		return clamp((mv - adj2) * adj1, crl, cru);
 	}
 
-	inline float to_cv(int mv)
+	inline int to_mv(float cv) const
 	{
-		return (mv - adj2) * adj1;
+		return clamp((int)(cv / adj1 + adj2), mrl, mru);
 	}
 
-	inline int to_mv(float cv)
+	inline bool match(ControllerType _type, int _channel) const
 	{
-		return cv / adj1 + adj2;
+		return type == _type && (channel == _channel || channel == -1);
 	}
 };
 

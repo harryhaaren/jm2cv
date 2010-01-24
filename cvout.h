@@ -1,6 +1,8 @@
 #include "client.h"
 #include "mapping.h"
 
+#define MAX_MIDI_CHANNELS 16
+
 class CVOut : Client
 {
 private:
@@ -13,6 +15,10 @@ private:
 
 	MappingList::iterator m_it_begin;
 	MappingList::iterator m_it_end;
+
+	char m_nrpn_msb[MAX_MIDI_CHANNELS];
+	char m_nrpn_lsb[MAX_MIDI_CHANNELS];
+	bool m_nrpn[MAX_MIDI_CHANNELS];
 
 	void shutdown();
 	int process(jack_nframes_t nframes);

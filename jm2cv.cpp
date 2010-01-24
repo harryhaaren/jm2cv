@@ -23,28 +23,49 @@ bool read_config(const char *filename)
 		/* Ignore comments */
 		if (buf[0] == '#') continue;
 
-		char type[80], name[80];
+		char dir[80], name[80], type[80];
 		int channel, ccmsb, cclsb, mrl, mru;
 		float crl, cru;
 		float latency;
-		if (sscanf(buf, "%s %s %d %d %d %d %d %f %f %f", type, name, &channel, &ccmsb, &cclsb, &mrl, &mru, &crl, &cru, &latency) == 10) {
+		if (sscanf(buf, "%s %s %d %s %d %d %d %d %f %f %f", dir, name, &channel, type, &ccmsb, &cclsb, &mrl, &mru, &crl, &cru, &latency) == 11) {
 
-			if (ccmsb < 0 || ccmsb > 127) continue;
-			if (cclsb < -1 || cclsb > 127) continue;
-			if (mrl < 0 || mrl > (cclsb == -1 ? 127 : 16383)) continue;
-			if (mru < 0 || mru > (cclsb == -1 ? 127 : 16383)) continue;
+			ControllerType itype;
+			bool has_lsb = true;
+
+			if (!strcmp(type, "pb")) itype = TYPE_PB;
+			else if (!strcmp(type, "cc")) itype = TYPE_CC;
+			else if (!strcmp(type, "nrpn")) itype = TYPE_NRPN;
+			else if (!strcmp(type, "nrpn7")) { itype = TYPE_NRPN; has_lsb = false; }
+			else if (!strcmp(type, "rpn")) itype = TYPE_RPN;
+			else if (!strcmp(type, "rpn7")) { itype = TYPE_RPN; has_lsb = false; }
+			else continue;
+
+			if (itype == TYPE_CC && cclsb == -1) has_lsb = false;
+
+			if (itype == TYPE_PB) {
+				if (ccmsb != -1) continue;
+				if (cclsb != -1) continue;
+				if (mrl < 0 || mrl > 16383) continue;
+				if (mru < 0 || mru > 16383) continue;
+				has_lsb = false;
+			} else {
+				if (ccmsb < 0 || ccmsb > 127) continue;
+				if (cclsb < -1 || cclsb > 127) continue;
+				if (mrl < 0 || mrl > (has_lsb ? 16383 : 127)) continue;
+				if (mru < 0 || mru > (has_lsb ? 16383 : 127)) continue;
+			}
 			if (mrl > mru) continue;
 //			if (crl < -1.0f || crl > 1.0f) continue;
 //			if (cru < -1.0f || cru > 1.0f) continue;
 			if (crl > cru) continue;
 			if (latency < 0.0f) continue;
 
-			if (!strcmp(type, "cvout")) {
+			if (!strcmp(dir, "cvout")) {
 				if (channel < -1 || channel > 15) continue;
-				cvout.add_mapping(Mapping(name, channel, ccmsb, cclsb, mrl, mru, crl, cru, latency));
-			} else if (!strcmp(type, "cvin")) {
+				cvout.add_mapping(Mapping(name, channel, itype, ccmsb, cclsb, mrl, mru, crl, cru, latency, has_lsb));
+			} else if (!strcmp(dir, "cvin")) {
 				if (channel < 0 || channel > 15) continue;
-				cvin.add_mapping(Mapping(name, channel, ccmsb, cclsb, mrl, mru, crl, cru, latency));
+				cvin.add_mapping(Mapping(name, channel, itype, ccmsb, cclsb, mrl, mru, crl, cru, latency, has_lsb));
 			}
 		}
 	}

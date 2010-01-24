@@ -24,15 +24,78 @@ int CVOut::process(jack_nframes_t nframes)
 
 	for (jack_nframes_t f = 0; f < nframes; f++) {
 		while (ev.time == f && event_index < event_count) {
-			if ((ev.buffer[0] & 0xF0) == 0xB0) {
-				// Do what
-				int channel = ev.buffer[0] & 0x0F;
+			int channel = ev.buffer[0] & 0x0F;
+			MappingList::iterator it;
 
-				MappingList::iterator it;
+			switch (ev.buffer[0] & 0xF0) {
+			case 0xB0:
+				if (ev.buffer[1] == 99) {
+					m_nrpn_msb[channel] = ev.buffer[2];
+					m_nrpn[channel] = true;
+				} else if (ev.buffer[1] == 98) {
+					m_nrpn_lsb[channel] = ev.buffer[2];
+					m_nrpn[channel] = true;
+				} else if (ev.buffer[1] == 101) {
+					m_nrpn_msb[channel] = ev.buffer[2];
+					m_nrpn[channel] = false;
+				} else if (ev.buffer[1] == 100) {
+					m_nrpn_lsb[channel] = ev.buffer[2];
+					m_nrpn[channel] = false;
+				} else {
+					if (ev.buffer[1] == 6 || ev.buffer[1] == 38) {
+						ControllerType type = m_nrpn[channel] ? TYPE_NRPN : TYPE_RPN;
+						bool msb = ev.buffer[1] == 6;
+
+						for (it = m_it_begin; it != m_it_end; ++it) {
+							Mapping *m = &(*it);
+							if (!m->match(type, channel)) continue;
+							if (m_nrpn_msb[channel] != m->ccmsb) continue;
+							if (m_nrpn_lsb[channel] != m->cclsb) continue;
+
+							if (msb) {
+								if (m->has_lsb) {
+									m->cur_mv = ev.buffer[2] << 7;
+								} else {
+									m->cur_mv = ev.buffer[2];
+									m->interp_cvout(m_tick);
+								}
+							} else {
+								m->cur_mv &= ~0x7F;
+								m->cur_mv |= ev.buffer[2];
+								m->interp_cvout(m_tick);
+							}
+						}
+					} else {
+						for (it = m_it_begin; it != m_it_end; ++it) {
+							Mapping *m = &(*it);
+							if (!m->match(TYPE_CC, channel)) continue;
+
+							if (ev.buffer[1] == m->ccmsb) {
+								if (m->has_lsb) {
+									m->cur_mv = ev.buffer[2] << 7;
+								} else {
+									m->cur_mv = ev.buffer[2];
+									m->interp_cvout(m_tick);
+								}
+							} else if (ev.buffer[1] == m->cclsb) {
+								m->cur_mv &= ~0x7F;
+								m->cur_mv |= ev.buffer[2];
+								m->interp_cvout(m_tick);
+							}
+						}
+					}
+				}
+				break;
+
+			case 0xE0:
 				for (it = m_it_begin; it != m_it_end; ++it) {
 					Mapping *m = &(*it);
-					m->handle_cvout(channel, ev.buffer[1], ev.buffer[2], m_tick);
+					if (!m->match(TYPE_PB, channel)) continue;
+
+					m->cur_mv = ev.buffer[1] | (ev.buffer[2] << 7);
+					m->interp_cvout(m_tick);
 				}
+				break;
 			}
 
 			event_index++;
