@@ -44,7 +44,7 @@ public:
 	tick_t since_last_tick;
 
 	Mapping(const char *name,
-	        int channel, ControllerType(type), int ccmsb, int cclsb,
+	        int channel, ControllerType type, int ccmsb, int cclsb,
 	        int mrl, int mru, float crl, float cru, float latency, bool has_lsb) :
 	    name(name), channel(channel), type(type), ccmsb(ccmsb), cclsb(cclsb),
 	    mrl(mrl), mru(mru), crl(crl), cru(cru), latency(latency),
