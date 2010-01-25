@@ -89,10 +89,18 @@ bool read_config(const char *filename)
 					std::clog << line << ": MIDI channel " << channel << " must be between -1 and 15." << std::endl;
 					continue;
 				}
+				if (cvout.find(name)) {
+					std::clog << line << ": Name '" << name << "' already defined." << std::endl;
+					continue;
+				}
 				cvout.add_mapping(Mapping(name, channel, itype, ccmsb, cclsb, mrl, mru, crl, cru, latency, has_lsb));
 			} else if (!strcmp(dir, "cvin")) {
 				if (channel < 0 || channel > 15) {
 					std::clog << line << ": MIDI channel " << channel << " must be between 0 and 15." << std::endl;
+					continue;
+				}
+				if (cvin.find(name)) {
+					std::clog << line << ": Name '" << name << "' already defined." << std::endl;
 					continue;
 				}
 				cvin.add_mapping(Mapping(name, channel, itype, ccmsb, cclsb, mrl, mru, crl, cru, latency, has_lsb));

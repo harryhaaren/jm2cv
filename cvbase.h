@@ -22,6 +22,8 @@ public:
 		m_mapping_list.push_back(m);
 	}
 
+	bool find(const char *name) const;
+
 	void stop()
 	{
 		close();

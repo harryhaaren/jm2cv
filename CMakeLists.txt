@@ -10,6 +10,7 @@ pkg_check_modules(JACK jack>=0.118)
 SET(SOURCES
 	client.cpp
 	client.h
+	cvbase.cpp
 	cvbase.h
 	cvin.cpp
 	cvin.h
