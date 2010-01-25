@@ -16,7 +16,10 @@ bool read_config(const char *filename)
 		return false;
 	}
 
+	int line = 0;
+
 	while (!feof(f)) {
+		line++;
 		char buf[80];
 		fgets(buf, sizeof buf, f);
 
@@ -38,7 +41,10 @@ bool read_config(const char *filename)
 			else if (!strcmp(type, "nrpn7")) { itype = TYPE_NRPN; has_lsb = false; }
 			else if (!strcmp(type, "rpn")) itype = TYPE_RPN;
 			else if (!strcmp(type, "rpn7")) { itype = TYPE_RPN; has_lsb = false; }
-			else continue;
+			else {
+				std::clog << line << ": Unknown type '" << type << "'." << std::endl;
+				continue;
+			}
 
 			if (itype == TYPE_CC && cclsb == -1) has_lsb = false;
 
@@ -49,22 +55,46 @@ bool read_config(const char *filename)
 				if (mru < 0 || mru > 16383) continue;
 				has_lsb = false;
 			} else {
-				if (ccmsb < 0 || ccmsb > 127) continue;
-				if (cclsb < -1 || cclsb > 127) continue;
-				if (mrl < 0 || mrl > (has_lsb ? 16383 : 127)) continue;
-				if (mru < 0 || mru > (has_lsb ? 16383 : 127)) continue;
+				if (ccmsb < 0 || ccmsb > 127) {
+					std::clog << line << ": CC MSB " << ccmsb << " must be between 0 and 127." << std::endl;
+					continue;
+				}
+				if (cclsb < -1 || cclsb > 127) {
+					std::clog << line << ": CC LSB " << cclsb << " must be between -1 and 127." << std::endl;
+					continue;
+				}
+				if (mrl < 0 || mrl > (has_lsb ? 16383 : 127)) {
+					std::clog << line << ": MIDI range lower bound " << mrl << " must be between 0 and " << (has_lsb ? 16383 : 127) << "." << std::endl;
+					continue;
+				}
+				if (mru < 0 || mru > (has_lsb ? 16383 : 127)) {
+					std::clog << line << ": MIDI range upper bound " << mru << " must be between 0 and " << (has_lsb ? 16383 : 127) << "." << std::endl;
+					continue;
+				}
 			}
-			if (mrl > mru) continue;
+			if (mrl > mru) {
+				std::clog << line << ": MIDI range lower bound must be below upper bound." << std::endl;
+				continue;
+			}
 //			if (crl < -1.0f || crl > 1.0f) continue;
 //			if (cru < -1.0f || cru > 1.0f) continue;
-			if (crl > cru) continue;
-			if (latency < 0.0f) continue;
+//			if (crl > cru) continue;
+			if (latency < 0.0f) {
+				std::clog << line << ": Latency " << latency << " must be greater than zero." << std::endl;
+				continue;
+			}
 
 			if (!strcmp(dir, "cvout")) {
-				if (channel < -1 || channel > 15) continue;
+				if (channel < -1 || channel > 15) {
+					std::clog << line << ": MIDI channel " << channel << " must be between -1 and 15." << std::endl;
+					continue;
+				}
 				cvout.add_mapping(Mapping(name, channel, itype, ccmsb, cclsb, mrl, mru, crl, cru, latency, has_lsb));
 			} else if (!strcmp(dir, "cvin")) {
-				if (channel < 0 || channel > 15) continue;
+				if (channel < 0 || channel > 15) {
+					std::clog << line << ": MIDI channel " << channel << " must be between 0 and 15." << std::endl;
+					continue;
+				}
 				cvin.add_mapping(Mapping(name, channel, itype, ccmsb, cclsb, mrl, mru, crl, cru, latency, has_lsb));
 			}
 		}
