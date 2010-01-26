@@ -19,6 +19,7 @@ private:
 
 public:
 	void start();
+	void stop();
 };
 
 #endif // CVOUT_H

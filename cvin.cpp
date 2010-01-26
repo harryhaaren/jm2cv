@@ -119,3 +119,13 @@ void CVIn::start()
 	m_it_begin = it_begin;
 	m_ready    = true;
 }
+
+void CVIn::stop()
+{
+	if (m_mapping_list.size() == 0) return;
+
+	close();
+
+	delete [] m_ports;
+	delete [] m_buffers;
+}

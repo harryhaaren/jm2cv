@@ -25,11 +25,6 @@ public:
 
 	bool find(const char *name) const;
 
-	void stop()
-	{
-		close();
-	}
-
 	void set_name(const char *name)
 	{
 		m_config_name = name;

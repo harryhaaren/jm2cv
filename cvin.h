@@ -13,6 +13,7 @@ private:
 
 public:
 	void start();
+	void stop();
 };
 
 #endif // CVIN_H
