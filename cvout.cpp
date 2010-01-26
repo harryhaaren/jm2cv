@@ -23,7 +23,7 @@ int CVOut::process(jack_nframes_t nframes)
 	if (0 < event_count) jack_midi_event_get(&ev, midi_in, event_index);
 
 	for (jack_nframes_t f = 0; f < nframes; f++) {
-		while (ev.time == f && event_index < event_count) {
+		while (event_index < event_count && ev.time == f) {
 			int channel = ev.buffer[0] & 0x0F;
 			MappingList::iterator it;
 
