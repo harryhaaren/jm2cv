@@ -10,6 +10,7 @@ protected:
 	MappingList  m_mapping_list;
 	bool         m_ready;
 	tick_t       m_tick;
+	std::string  m_config_name;
 
 	sample_t **m_buffers;
 
@@ -27,6 +28,11 @@ public:
 	void stop()
 	{
 		close();
+	}
+
+	void set_name(const char *name)
+	{
+		m_config_name = name;
 	}
 };
 

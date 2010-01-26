@@ -21,13 +21,22 @@ bool read_config(const char *filename)
 
 	while (!feof(f)) {
 		line++;
-		char buf[80];
+		char buf[80], name[80];
 		fgets(buf, sizeof buf, f);
 
 		/* Ignore comments */
 		if (buf[0] == '#') continue;
 
-		char dir[80], name[80], type[80];
+		/* Try parsing port name entries */
+		if (sscanf(buf, "cvin_name %s", name) == 1) {
+			cvin.set_name(name);
+			continue;
+		} else if (sscanf(buf, "cvout_name %s", name) == 1) {
+			cvout.set_name(name);
+			continue;
+		}
+
+		char dir[80], type[80];
 		int channel, ccmsb, cclsb, mrl, mru;
 		float crl, cru;
 		float latency;

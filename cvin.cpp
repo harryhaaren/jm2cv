@@ -99,7 +99,7 @@ void CVIn::start()
 	m_ports = new jack_port_t *[m_mapping_list.size()];
 	m_buffers = new sample_t *[m_mapping_list.size()];
 
-	open("m2cv_in");
+	open(m_config_name.empty() ? "m2cv_in" : m_config_name.c_str());
 
 	m_midi_out = port_register("midi_out", JACK_DEFAULT_MIDI_TYPE, JackPortIsOutput, 0);
 
