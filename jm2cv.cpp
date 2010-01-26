@@ -54,6 +54,7 @@ bool read_config(const char *filename)
 			else {
 				std::clog << line << ": Unknown type '" << type << "'." << std::endl;
 				good = false;
+				itype = TYPE_CC;
 			}
 
 			if (itype == TYPE_CC && cclsb == -1) has_lsb = false;
