@@ -119,6 +119,8 @@ bool read_config(const char *filename)
 		}
 	}
 
+	fclose(f);
+
 	if (!good) {
 		std::cerr << "Error(s) in configuration file, stopping." << std::endl;
 	}
