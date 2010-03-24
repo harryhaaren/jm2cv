@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstring>
 #include <csignal>
+#include <cstdio>
 
 #include "cvout.h"
 #include "cvin.h"
