@@ -2,6 +2,7 @@
 #include <cstring>
 #include <csignal>
 #include <cstdio>
+#include <unistd.h>
 
 #include "cvout.h"
 #include "cvin.h"
